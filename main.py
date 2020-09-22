@@ -52,8 +52,14 @@ class Combo:
             result += str(card) + "\n"
         return result
 
-    def check():
-        pass
+    def check(self):
+        # if all the suits are the same
+        status = True
+        for card in self.cards:
+            if not self.cards[0].suit == card.suit:
+                status = False
+
+        print(status)
 
 
 def print_cards(cards):
@@ -71,8 +77,9 @@ def main():
     for i in range(5):
         current_cards.append(d.deal())
 
+    current_cards = [Card("heart", "jack"),Card("heart", "7"), Card("diamond", "4"), Card("heart", "2"), Card("heart", "9")]
     c = Combo(current_cards)
-    print(c)
+    c.check()
 
 if __name__ == "__main__":
     main()
