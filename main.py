@@ -6,11 +6,20 @@ import random
 # Card with a suit and rank
 class Card:
     suits = ["heart", "club", "spade", "diamond"]
-    values = [str(v) for v in range(2, 11)] + ["jack", "queen", "king", "ace"]
+    ranks = [str(v) for v in range(2, 11)] + ["jack", "queen", "king", "ace"]
 
     def __init__(self, suit, rank):
         self.suit = suit
         self.rank = rank
+
+    def _val(self):
+        if self.rank == "jack": return 11
+        if self.rank == "queen": return 12
+        if self.rank == "king": return 13
+        return int(self.rank)
+
+    def __lt__(self, other):
+        return self._val() < other._val()
 
     def __str__(self):
         return f"{self.rank.title()} of {self.suit}s"
@@ -20,7 +29,7 @@ class Card:
 class Deck:
     def __init__(self):
         self.cards = [
-            Card(suit, value) for suit in Card.suits for value in Card.values
+            Card(suit, value) for suit in Card.suits for value in Card.ranks
         ]
 
     def __str__(self):
@@ -52,14 +61,48 @@ class Combo:
             result += str(card) + "\n"
         return result
 
-    def check(self):
-        # if all the suits are the same
+    def same_suit(self):
         status = True
         for card in self.cards:
             if not self.cards[0].suit == card.suit:
                 status = False
 
-        print(status)
+        print("Are all of the cards the same suit?")
+        print("yes") if status else print("no")
+        return status
+
+    def in_order(self):
+        status = True
+        o = sorted(self.cards)
+        status = self.cards == o
+
+        print("Are the cards in order?")
+        print("yes") if status else print("no")
+        return status
+
+    def check(self):
+        # is it a straight / royal flush?
+        if self.same_suit() and self.in_order():
+            print("Is the highest card a king?")
+            if sorted(self.cards)[-1].rank == "king":
+                print("yes")
+                return "Royal flush"
+            else:
+                print("no")
+                return "Straight flush"
+
+        # is it a four of a kind
+        list_of_ranks = [c.rank for c in self.cards]
+        print("Are there four of a kind?")
+        for r in Card.ranks:
+            if list_of_ranks.count(r) == 4:
+                print("yes")
+                return "Four of a kind"
+        print("no")
+
+
+        # base condition
+        return "High card"
 
 
 def print_cards(cards):
@@ -77,9 +120,21 @@ def main():
     for i in range(5):
         current_cards.append(d.deal())
 
-    current_cards = [Card("heart", "jack"),Card("heart", "7"), Card("diamond", "4"), Card("heart", "2"), Card("heart", "9")]
+    current_cards = [Card("heart", "2"), Card("club", "2"), Card("heart", "2"),Card("heart", "2"), Card("heart", "king")]
+
+    print("Current cards:")
+    print("------------------------------")
     c = Combo(current_cards)
-    c.check()
+    print(c)
+    print()
+    print("Thought process:")
+    print("------------------------------")
+    decision = c.check()
+    print()
+    print("Decision:")
+    print("------------------------------")
+    print(decision)
+
 
 if __name__ == "__main__":
     main()
