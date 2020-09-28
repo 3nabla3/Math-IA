@@ -5,6 +5,7 @@ import time
 from multiprocessing import Process, Value, Manager
 import os
 import sys
+import json
 
 # Card with a suit and rank
 class Card:
@@ -28,6 +29,9 @@ class Card:
 
     def __str__(self):
         return f"{self.rank.title()} of {self.suit}s"
+
+    def __eq__(self, other):
+        return self.suit == other.suit and self.rank == other.rank
 
 
 # List of 5 cards that can be checked for combinations
@@ -137,6 +141,12 @@ def worker(keep_going, return_dict, procnum):
         while keep_going.value:
             # deal 5 random cards
             current_cards = [Card(random.choice(Card.suits), random.choice(Card.ranks)) for i in range(5)]
+
+            for i in range(len(current_cards)):
+                for j in range(i, len(current_cards)):
+                    if i == j:
+                        continue
+
             c = Combo(current_cards)
 
             # check the 5 cards for combo
@@ -148,51 +158,88 @@ def worker(keep_going, return_dict, procnum):
         return_dict[procnum] = amount_per_combo
 
 
+def save_work(file_name, this_round_amount_per_combo):
+    # save the results to json
+    if os.path.exists(file_name):
+        g_amount_per_combo = {"HC": 0, "P": 0, "TP" : 0, "ToaK": 0, "S": 0, "F": 0, "FH": 0, "FoaK": 0, "SF": 0, "RF": 0}
+        with open(file_name, 'r') as file:
+            file_amount_per_combo = json.load(file)
+            for key in file_amount_per_combo:
+                g_amount_per_combo[key] = this_round_amount_per_combo[key] + file_amount_per_combo[key]
+    else:
+        g_amount_per_combo = this_round_amount_per_combo.copy()
+
+    with open(file_name, 'w') as file:
+        json.dump(g_amount_per_combo, file)
+        print("Work saved!")
+
+    return g_amount_per_combo
+
 
 def main():
     # set global values
     keep_going = Value('b', True)
-    return_dict = Manager().dict()
+    file_name = 'results.json'
 
     # search time 10s by default
-    search_time = 10
+    search_time = 0
     if len(sys.argv) > 1:
         search_time = float(sys.argv[1])
-    if search_time <= 0:
+    if len(sys.argv) > 2:
+        file_name = sys.argv[2]
+
+    print(file_name)
+
+    if search_time < 0:
         raise ValueError("search time must be a positive value")
 
-    # create processes and start them
-    p = [Process(target=worker, args=(keep_going, return_dict, i)) for i in range(os.cpu_count())]
-    start_time = time.time()
-    for i in p:
-        i.start()
 
+    start_time = time.time()
 
     # stop all processes after the seach time and wait for them
-    try:
-        time.sleep(search_time)
-        keep_going.value = False
-    # if the program is quit, display what ever is already found
-    except(KeyboardInterrupt):
-        keep_going.value = False
-        print()
-    finally:
-        for i in p:
-            i.join()
+    while True:
+        try:
+            # create a global dict with freq of each combo
+            this_round_amount_per_combo = {"HC": 0, "P": 0, "TP" : 0, "ToaK": 0, "S": 0, "F": 0, "FH": 0, "FoaK": 0, "SF": 0, "RF": 0}
+            return_dict = Manager().dict()
 
-    # create a global dict with freq of each combo
-    g_amount_per_combo = {"HC": 0, "P": 0, "TP" : 0, "ToaK": 0, "S": 0, "F": 0, "FH": 0, "FoaK": 0, "SF": 0, "RF": 0}
+            # create processes and start them
+            p = [Process(target=worker, args=(keep_going, return_dict, i)) for i in range(os.cpu_count())]
+            print()
+            for i in p:
+                i.start()
 
-    # populate that dict with the worker dict
-    for procnum in return_dict:
-        for combo_name in return_dict[procnum]:
-            g_amount_per_combo[combo_name] += return_dict[procnum][combo_name]
+            time.sleep(3)
+            keep_going.value = False
+        # if the program is quit, display what ever is already found
+        except(KeyboardInterrupt):
+            keep_going.value = False
+            print()
+            break
+        finally:
+            for i in p:
+                i.join()
+            keep_going.value = True
 
-    # display the freq of each combo
-    for combo_name in g_amount_per_combo:
-        print(f"{combo_name}: \t {g_amount_per_combo[combo_name]}")
+            # populate that dict with the worker dict
+            for procnum in return_dict:
+                for combo_name in return_dict[procnum]:
+                    this_round_amount_per_combo[combo_name] += return_dict[procnum][combo_name]
 
-    print(f"Took {sum(g_amount_per_combo.values())} tries and {time.time() - start_time} seconds")
+            g_amount_per_combo = save_work(file_name, this_round_amount_per_combo)
+
+            this_round_total = sum(this_round_amount_per_combo.values())
+            g_total = sum(g_amount_per_combo.values())
+            print(this_round_total, "additional combos found")
+            print()
+            print("Combo Name\tRound #\t\tRound %\t\tTotal #\t\tTotal %")
+            if (this_round_total > 0):
+                for combo_name in this_round_amount_per_combo:
+                    print(f"{combo_name}:\t\t{this_round_amount_per_combo[combo_name]}\t\t{round(this_round_amount_per_combo[combo_name] * 100 / this_round_total, 3)}%\t\t{g_amount_per_combo[combo_name]}\t\t{round(g_amount_per_combo[combo_name] * 100 / g_total, 3)}%")
+                print()
+
+
+    # print(f"Took {sum(g_amount_per_combo.values())} tries and {time.time() - start_time} seconds")
 
 
 if __name__ == "__main__":
