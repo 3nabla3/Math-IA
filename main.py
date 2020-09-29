@@ -7,6 +7,7 @@ import os
 import sys
 import json
 
+
 # Card with a suit and rank
 class Card:
     suits = ["heart", "club", "spade", "diamond"]
@@ -245,9 +246,6 @@ def main():
                     s += f"{round(g_amount_per_combo[combo_name] * 100 / g_total, 3)}%"
                     print(s)
                 print()
-
-
-    # print(f"Took {sum(g_amount_per_combo.values())} tries and {time.time() - start_time} seconds")
 
 
 if __name__ == "__main__":
