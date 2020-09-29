@@ -209,7 +209,7 @@ def main():
             for i in p:
                 i.start()
 
-            time.sleep(3)
+            time.sleep(10)
             keep_going.value = False
         # if the program is quit, display what ever is already found
         except(KeyboardInterrupt):
@@ -235,7 +235,15 @@ def main():
             print("Combo Name\tRound #\t\tRound %\t\tTotal #\t\tTotal %")
             if (this_round_total > 0):
                 for combo_name in this_round_amount_per_combo:
-                    print(f"{combo_name}:\t\t{this_round_amount_per_combo[combo_name]}\t\t{round(this_round_amount_per_combo[combo_name] * 100 / this_round_total, 3)}%\t\t{g_amount_per_combo[combo_name]}\t\t{round(g_amount_per_combo[combo_name] * 100 / g_total, 3)}%")
+                    s = f"{combo_name}:\t\t"\
+                    f"{this_round_amount_per_combo[combo_name]}\t\t"\
+                    f"{round(this_round_amount_per_combo[combo_name] * 100 / this_round_total, 3)}%\t\t"\
+                    f"{g_amount_per_combo[combo_name]}\t"
+                    # add an extra tab if the number in the prev category is small enough to mess up the columns
+                    if g_amount_per_combo[combo_name] < 10000000:
+                        s += "\t"
+                    s += f"{round(g_amount_per_combo[combo_name] * 100 / g_total, 3)}%"
+                    print(s)
                 print()
 
 
