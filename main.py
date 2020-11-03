@@ -136,7 +136,8 @@ def main():
     number_of_trials = 10 ** int(sys.argv[1])
     trials_completed = 0
     number_of_duplicates = 0
-    amount_per_combo = {"HC": 0, "P": 0, "TP" : 0, "ToaK": 0, "S": 0, "F": 0, "FH": 0, "FoaK": 0, "SF": 0, "RF": 0}
+    amount_per_combo =              {"HC": 0, "P": 0, "TP" : 0, "ToaK": 0, "S": 0, "F": 0, "FH": 0, "FoaK": 0, "SF": 0, "RF": 0}
+    expected_percent_per_combo =    {"HC": 50.12, "P": 42.26, "TP" : 12.60, "ToaK": 2.113, "S": 0.3940, "F": 0.1965, "FH": 0.07203, "FoaK": 0.02656, "SF": 0.001385, "RF": 0.0001539}
 
     while trials_completed < number_of_trials:
         # generate 5 random cards
@@ -166,10 +167,13 @@ def main():
         amount_per_combo[result] += 1
         trials_completed += 1
 
+    print()
+    print("Combo name\tamount\t\tpercentage\texpected percentage")
     for combo_name in amount_per_combo:
         s = f"{combo_name}:\t\t"\
         f"{amount_per_combo[combo_name]}\t\t"\
-        f"{round(amount_per_combo[combo_name] * 100 / trials_completed, 10)}%\t\t"
+        f"{round(amount_per_combo[combo_name] * 100 / trials_completed, 10)}%\t\t"\
+        f"{expected_percent_per_combo[combo_name]}%"
         print(s)
 
 
